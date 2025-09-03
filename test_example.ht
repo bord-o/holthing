@@ -1,9 +1,9 @@
 let x = Some(99)
 let y = None
 
-type option<T> = Some(T) | None
+type option = Some(int) | None
 
-def test(opt: option<int>) -> int {
+def test(opt: option) -> int {
     match opt {
         Some(n) => if n == 0 then 1 else n
         None => 1

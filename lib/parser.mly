@@ -5,6 +5,7 @@
 
 %token EOF
 %token <string> ID
+%token <string> CONSTRUCTOR
 %token <int> INT
 %token <string> STRING
 %token <string> HOL_TERM
@@ -18,9 +19,15 @@
 %type <program> program
 %type <dec> declaration
 %type <dec list> declaration_list
+%type <dec> type_declaration
 %type <exp> expression
+%type <exp list> expression_list
 %type <ty> type_expr
+%type <ty list> type_list
 %type <pattern> pattern
+%type <pattern list> pattern_list
+%type <pattern * exp> match_case
+%type <(pattern * exp) list> match_cases
 %type <proof_spec> proof_spec
 %type <proof_spec list> proof_spec_list
 %type <param> parameter
@@ -29,7 +36,7 @@
 %type <variant list> variant_list
 %type <literal> literal
 
-%right ASSIGN
+%right IN
 %left OR
 %left AND
 %nonassoc EQ NEQ LT LE GT GE
@@ -64,10 +71,13 @@ declaration:
   | DEF ID LPAREN parameter_list RPAREN ARROW type_expr LBRACE expression RBRACE proof_spec_list {
       FunDec { name = $2; params = $4; return_ty = Some $7; body = $9; specs = $11; pos = $startpos }
     }
+  | type_declaration { $1 }
+
+type_declaration:
   | TYPE ID ASSIGN variant_list {
       TypeDec { name = $2; type_params = []; definition = VariantDef $4; pos = $startpos }
     }
-  | TYPE ID LT ID GT ASSIGN variant_list {
+  | TYPE ID LBRACK ID RBRACK ASSIGN variant_list {
       TypeDec { name = $2; type_params = [$4]; definition = VariantDef $7; pos = $startpos }
     }
 
@@ -103,8 +113,11 @@ expression:
   | MATCH expression LBRACE match_cases RBRACE {
       MatchExp ($2, $4, $startpos)
     }
-  | ID LPAREN expression_list RPAREN {
+  | CONSTRUCTOR LPAREN expression_list RPAREN {
       ConstructorExp ($1, $3, $startpos)
+    }
+  | CONSTRUCTOR {
+      ConstructorExp ($1, [], $startpos)
     }
   | LPAREN expression RPAREN { $2 }
 
@@ -124,8 +137,11 @@ pattern:
   | UNDERSCORE { WildcardPat $startpos }
   | ID { VarPat ($1, $startpos) }
   | literal { LiteralPat ($1, $startpos) }
-  | ID LPAREN pattern_list RPAREN {
+  | CONSTRUCTOR LPAREN pattern_list RPAREN {
       ConstructorPat ($1, $3, $startpos)
+    }
+  | CONSTRUCTOR {
+      ConstructorPat ($1, [], $startpos)
     }
 
 pattern_list:
@@ -142,7 +158,7 @@ literal:
 
 type_expr:
   | ID { NameTy ($1, $startpos) }
-  | ID LT type_list GT { GenericTy ($1, $3, $startpos) }
+  | ID LBRACK type_list RBRACK { GenericTy ($1, $3, $startpos) }
   | type_expr ARROW type_expr { FunTy ($1, $3, $startpos) }
   | LPAREN type_expr RPAREN { $2 }
 
@@ -163,8 +179,8 @@ variant_list:
   | variant BAR variant_list { $1 :: $3 }
 
 variant:
-  | ID { { name = $1; args = []; pos = $startpos } }
-  | ID LPAREN type_list RPAREN { { name = $1; args = $3; pos = $startpos } }
+  | CONSTRUCTOR { { name = $1; args = []; pos = $startpos } }
+  | CONSTRUCTOR LPAREN type_list RPAREN { { name = $1; args = $3; pos = $startpos } }
 
 proof_spec_list:
   | { [] }

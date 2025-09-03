@@ -15,8 +15,9 @@
 
 let digit = ['0'-'9']
 let digits = digit+
-let alpha = ['a'-'z''A'-'Z']
-let alphas = alpha+
+let lower = ['a'-'z']
+let upper = ['A'-'Z']
+let alpha = lower | upper
 let ws = [' ' '\t']
 let nl = "\r\n" | '\n' | '\r'
 
@@ -66,8 +67,10 @@ rule token = parse
 | "measure"
     { pp "MEASURE"; MEASURE }
 
-| alpha (alpha | digit | "_")* as id
+| lower (alpha | digit | "_")* as id
     { pp ("ID: " ^ id); ID id }
+| upper (alpha | digit | "_")* as id
+    { pp ("CONSTRUCTOR: " ^ id); CONSTRUCTOR id }
 
 | digits as num
     { pp ("INT: " ^ num); INT (int_of_string num) }
