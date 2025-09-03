@@ -14,8 +14,8 @@ let parse_file filename =
   | Parser.Error ->
       close_in ic;
       let pos = lexbuf.lex_curr_p in
-      Printf.eprintf "Parse error at line %d, column %d\n"
-        pos.pos_lnum (pos.pos_cnum - pos.pos_bol);
+      Printf.eprintf "Parse error at line %d, column %d\n" pos.pos_lnum
+        (pos.pos_cnum - pos.pos_bol);
       exit 1
   | Lexer.Error msg ->
       close_in ic;

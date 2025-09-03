@@ -7,10 +7,7 @@ let pp_pos fmt (p : pos) =
 
 let show_pos p = Format.asprintf "%a" pp_pos p
 
-type binop =
-  | Add | Sub | Mul | Div
-  | Eq | Neq | Lt | Le | Gt | Ge
-  | And | Or
+type binop = Add | Sub | Mul | Div | Eq | Neq | Lt | Le | Gt | Ge | And | Or
 [@@deriving show]
 
 type hol_term = string [@@deriving show]
@@ -21,17 +18,8 @@ type ty =
   | FunTy of ty * ty * pos
 [@@deriving show]
 
-and type_def =
-  | VariantDef of variant list
-  | AliasDef of ty
-[@@deriving show]
-
-and variant = {
-  name : symbol;
-  args : ty list;
-  pos : pos;
-}
-[@@deriving show]
+and type_def = VariantDef of variant list | AliasDef of ty [@@deriving show]
+and variant = { name : symbol; args : ty list; pos : pos } [@@deriving show]
 
 type pattern =
   | WildcardPat of pos
@@ -40,11 +28,7 @@ type pattern =
   | ConstructorPat of symbol * pattern list * pos
 [@@deriving show]
 
-and literal =
-  | IntLit of int
-  | BoolLit of bool
-  | StringLit of string
-  | UnitLit
+and literal = IntLit of int | BoolLit of bool | StringLit of string | UnitLit
 [@@deriving show]
 
 type proof_spec =
@@ -69,20 +53,10 @@ type exp =
   | ConstructorExp of symbol * exp list * pos
 [@@deriving show]
 
-type param = {
-  name : symbol;
-  ty : ty;
-  pos : pos;
-}
-[@@deriving show]
+type param = { name : symbol; ty : ty; pos : pos } [@@deriving show]
 
 type dec =
-  | LetDec of {
-      name : symbol;
-      ty : ty option;
-      value : exp;
-      pos : pos;
-    }
+  | LetDec of { name : symbol; ty : ty option; value : exp; pos : pos }
   | FunDec of {
       name : symbol;
       params : param list;
