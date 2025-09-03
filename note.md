@@ -191,8 +191,8 @@ let f x y =
 
 ```
 
-And we want to use 'f' in a new function. We will instantiate the required term with the arguments that it is called with
-and generate a 'must' for the condition. The new definition 'g' will not be accepted until this is proven.
+And we want to use 'f' in a new function. We will instantiate the required term with the arguments that it is bound to 
+and generate a 'have' for the condition.
 
 ```ml
 let g x y = 
@@ -210,17 +210,15 @@ let g x y =
 
 ## The Language
 
-HOL thing uses syntax similar to ML and Isabelle with some caviats. This subset should be obvious to use, major deviations are described below.
+HOL thing uses syntax similar to ML and Rust with some caviats. This should be obvious to use, major deviations are described below.
 
 ### Caviats
 
 - No ML module system
 - No mutable values
 - No exceptions
-- QOL features missing
 - Functions have explicit type annotations
 - No recursive function without 'fun'
-- Lambdas don't generate proof obligations
 
 ### What we do have
 - let bindings
@@ -230,38 +228,11 @@ HOL thing uses syntax similar to ML and Isabelle with some caviats. This subset 
 - built in types matching HOL Light
 - syntax for integrating proof data into function definitions
 
-```sml
-
-val x = Some 99
-val y = None
-
-datatype 'a option = Some 'a | None
-
-fun test :: int option => int where
-  | test (Some n)  = if n = 0 then 1 else n
-  | test None = 1
-require `?n. $1 = None /\ $1 = Some n`
-show `!n. test n != 0`
-
-val res = test y + test x
-
-val a = 
-    let
-        val a' = 99
-        val b = 1
-    in
-        a' + b
-    end
-
-```
-
-### Alternative
-
 ```
 let x = Some(99)
 let y = None
 
-type option<T> = Some(T) | None
+type option<'a> = Some('a) | None
 
 def test(opt: option<int>) -> int {
     match opt {
