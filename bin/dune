@@ -1,0 +1,4 @@
+(executable
+ (public_name holthing)
+ (name main)
+ (libraries holthing))
