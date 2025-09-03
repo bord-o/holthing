@@ -6,6 +6,7 @@
 %token EOF
 %token <string> ID
 %token <string> CONSTRUCTOR
+%token <string> TYPE_PARAM
 %token <int> INT
 %token <string> STRING
 %token <string> HOL_TERM
@@ -77,7 +78,7 @@ type_declaration:
   | TYPE ID ASSIGN variant_list {
       TypeDec { name = $2; type_params = []; definition = VariantDef $4; pos = $startpos }
     }
-  | TYPE ID LBRACK ID RBRACK ASSIGN variant_list {
+  | TYPE ID LT TYPE_PARAM GT ASSIGN variant_list {
       TypeDec { name = $2; type_params = [$4]; definition = VariantDef $7; pos = $startpos }
     }
 
@@ -158,7 +159,8 @@ literal:
 
 type_expr:
   | ID { NameTy ($1, $startpos) }
-  | ID LBRACK type_list RBRACK { GenericTy ($1, $3, $startpos) }
+  | TYPE_PARAM { NameTy ($1, $startpos) }
+  | ID LT type_list GT { GenericTy ($1, $3, $startpos) }
   | type_expr ARROW type_expr { FunTy ($1, $3, $startpos) }
   | LPAREN type_expr RPAREN { $2 }
 

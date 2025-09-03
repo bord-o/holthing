@@ -71,6 +71,8 @@ rule token = parse
     { pp ("ID: " ^ id); ID id }
 | upper (alpha | digit | "_")* as id
     { pp ("CONSTRUCTOR: " ^ id); CONSTRUCTOR id }
+| "'" lower (alpha | digit | "_")* as id
+    { pp ("TYPE_PARAM: " ^ id); TYPE_PARAM id }
 
 | digits as num
     { pp ("INT: " ^ num); INT (int_of_string num) }
