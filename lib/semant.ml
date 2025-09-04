@@ -43,6 +43,8 @@ type env = {
 }
 [@@deriving show]
 
+let ( let* ) = Result.bind
+
 let empty_env = { vals = []; funs = []; types = []; type_params = [] }
 [@@deriving show]
 
@@ -113,7 +115,7 @@ and validate_type env ty =
   | GenericTy (name, args, pos) -> (
       match lookup_type name env with
       | None -> Error (UnboundType (name, pos))
-      | Some type_info -> (
+      | Some type_info ->
           if List.length args <> List.length type_info.type_params then
             Error
               (ArityMismatch
@@ -121,22 +123,16 @@ and validate_type env ty =
           else
             let rec validate_args acc = function
               | [] -> Ok (List.rev acc)
-              | arg :: rest -> (
-                  match validate_type env arg with
-                  | Ok validated_arg ->
-                      validate_args (validated_arg :: acc) rest
-                  | Error e -> Error e)
+              | arg :: rest ->
+                  let* validated_arg = validate_type env arg in
+                  validate_args (validated_arg :: acc) rest
             in
-            match validate_args [] args with
-            | Ok validated_args -> Ok (GenericTy (name, validated_args, pos))
-            | Error e -> Error e))
-  | FunTy (arg, ret, pos) -> (
-      match validate_type env arg with
-      | Ok validated_arg -> (
-          match validate_type env ret with
-          | Ok validated_ret -> Ok (FunTy (validated_arg, validated_ret, pos))
-          | Error e -> Error e)
-      | Error e -> Error e)
+            let* validated_args = validate_args [] args in
+            Ok (GenericTy (name, validated_args, pos)))
+  | FunTy (arg, ret, pos) ->
+      let* validated_arg = validate_type env arg in
+      let* validated_ret = validate_type env ret in
+      Ok (FunTy (validated_arg, validated_ret, pos))
 
 let get_literal_type = function
   | IntLit _ -> NameTy ("int", Lexing.dummy_pos)
@@ -184,34 +180,32 @@ let rec check_exp env exp =
       | None -> Error (UnboundVariable (name, pos)))
   | LiteralExp (lit, _) -> Ok (get_literal_type lit)
   | CallExp (func_exp, args, pos) -> (
-      match check_exp env func_exp with
+      let* func_type = check_exp env func_exp in
+      let rec check_args acc = function
+        | [] -> Ok (List.rev acc)
+        | arg :: rest -> (
+            match check_exp env arg with
+            | Ok arg_type -> check_args (arg_type :: acc) rest
+            | Error e -> Error e)
+      in
+      match check_args [] args with
       | Error e -> Error e
-      | Ok func_type -> (
-          let rec check_args acc = function
-            | [] -> Ok (List.rev acc)
-            | arg :: rest -> (
-                match check_exp env arg with
-                | Ok arg_type -> check_args (arg_type :: acc) rest
-                | Error e -> Error e)
+      | Ok arg_types ->
+          let rec apply_args func_ty args_left =
+            match (func_ty, args_left) with
+            | _, [] -> Ok func_ty
+            | FunTy (param_type, return_type, _), arg_type :: rest_args ->
+                if types_equal param_type arg_type then
+                  apply_args return_type rest_args
+                else Error (TypeMismatch (param_type, arg_type, pos))
+            | _ ->
+                Error
+                  (TypeMismatch
+                     ( FunTy (NameTy ("?", pos), NameTy ("?", pos), pos),
+                       func_ty,
+                       pos ))
           in
-          match check_args [] args with
-          | Error e -> Error e
-          | Ok arg_types ->
-              let rec apply_args func_ty args_left =
-                match (func_ty, args_left) with
-                | _, [] -> Ok func_ty
-                | FunTy (param_type, return_type, _), arg_type :: rest_args ->
-                    if types_equal param_type arg_type then
-                      apply_args return_type rest_args
-                    else Error (TypeMismatch (param_type, arg_type, pos))
-                | _ ->
-                    Error
-                      (TypeMismatch
-                         ( FunTy (NameTy ("?", pos), NameTy ("?", pos), pos),
-                           func_ty,
-                           pos ))
-              in
-              apply_args func_type arg_types))
+          apply_args func_type arg_types)
   | BinOpExp (left, op, right, pos) -> (
       match check_exp env left with
       | Error e -> Error e
