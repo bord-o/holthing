@@ -1,7 +1,7 @@
 // Test the new features
 
 // Type alias
-type myInt = int
+alias myInt = int
 type pair<'a> = ('a, 'a)
 
 // Recursive type definition
@@ -23,7 +23,7 @@ let add_lambda = fn (x: int, y: int) -> x + y
 // Pattern matching with constructors
 let length = fn (lst: list<int>) -> match lst {
   Nil => 0
-  | Cons(_, tail) => 1 + length(tail)
+  Cons(_, tail) => 1 + length(tail)
 }
 
 // Using type aliases

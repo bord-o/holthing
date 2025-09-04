@@ -199,8 +199,22 @@ let get_binop_type op =
   | And | Or ->
       (NameTy ("bool", Lexing.dummy_pos), NameTy ("bool", Lexing.dummy_pos), NameTy ("bool", Lexing.dummy_pos))
 
-let find_constructor _name _env : constructor_info option =
-  None (* TODO: Fix this - there seems to be a type inference bug *)
+let find_constructor name env =
+  let rec search_types types =
+    match types with
+    | [] -> None
+    | (_, (tinfo : type_info)) :: rest ->
+        let constructors = tinfo.constructors in
+        let rec search_constructors ctors =
+          match (ctors : constructor_info list) with
+          | [] -> search_types rest
+          | ctor :: remaining ->
+              if ctor.name = name then Some ctor
+              else search_constructors remaining
+        in
+        search_constructors constructors
+  in
+  search_types env.types
 
 let rec check_exp env exp =
   match exp with
