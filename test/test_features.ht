@@ -1,0 +1,30 @@
+// Test the new features
+
+// Type alias
+type MyInt = int
+type Pair<'a> = ('a, 'a)
+
+// Recursive type definition
+type List<'a> = Nil | Cons('a, List<'a>)
+
+// Constructor expressions and patterns
+let empty_list = Nil
+let my_list = Cons(1, Cons(2, Nil))
+
+// Multi-argument functions with currying
+def add(x: int, y: int) -> int { x + y }
+let add_one = add(1)
+let result = add_one(5)
+
+// Lambda expressions
+let double = fn (x: int) -> x * 2
+let add_lambda = fn (x: int, y: int) -> x + y
+
+// Pattern matching with constructors
+let length = fn (lst: List<int>) -> match lst {
+  Nil => 0
+  | Cons(_, tail) => 1 + length(tail)
+}
+
+// Using type aliases
+let my_int: MyInt = 42

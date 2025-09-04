@@ -1,0 +1,4 @@
+// Test 1: Basic functionality that should already work
+let x = 42
+let y = true
+let z = x + 1

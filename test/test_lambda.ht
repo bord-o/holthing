@@ -1,0 +1,4 @@
+// Test 3: Lambda expressions
+let double = fn (x: int) -> x * 2
+let add_lambda = fn (x: int, y: int) -> x + y
+let result = double(5)

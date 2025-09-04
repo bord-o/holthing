@@ -42,6 +42,8 @@ rule token = parse
     { pp "DEF"; DEF }
 | "type"
     { pp "TYPE"; TYPE }
+| "alias"
+    { pp "ALIAS"; ALIAS }
 | "match"
     { pp "MATCH"; MATCH }
 | "if"
@@ -66,6 +68,8 @@ rule token = parse
     { pp "PROVE"; PROVE }
 | "measure"
     { pp "MEASURE"; MEASURE }
+| "fn"
+    { pp "FN"; FN }
 
 | lower (alpha | digit | "_")* as id
     { pp ("ID: " ^ id); ID id }
@@ -109,6 +113,8 @@ rule token = parse
 | "/"
     { pp "DIVIDE"; DIVIDE }
 
+| ":="
+    { pp "COLONEQ"; COLONEQ }
 | "="
     { pp "ASSIGN"; ASSIGN }
 | ":"

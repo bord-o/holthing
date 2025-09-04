@@ -1,0 +1,2 @@
+// Test 5a: Recursive type without generics
+type IntList = Nil | Cons(int, IntList)

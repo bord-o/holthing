@@ -1,0 +1,5 @@
+// Test 2: Multi-argument functions with currying
+def add(x: int, y: int) -> int { x + y }
+let result1 = add(1, 2)
+let add_five = add(5)
+let result2 = add_five(3)

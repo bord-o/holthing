@@ -40,7 +40,9 @@ type proof_spec =
   | Measure of hol_term * pos
 [@@deriving show]
 
-type exp =
+type param = { name : symbol; ty : ty; pos : pos } [@@deriving show]
+
+and exp =
   | VarExp of symbol * pos
   | LiteralExp of literal * pos
   | CallExp of exp * exp list * pos
@@ -51,9 +53,8 @@ type exp =
   | BlockExp of exp list * pos
   | MatchExp of exp * (pattern * exp) list * pos
   | ConstructorExp of symbol * exp list * pos
+  | LambdaExp of param list * exp * pos
 [@@deriving show]
-
-type param = { name : symbol; ty : ty; pos : pos } [@@deriving show]
 
 type dec =
   | LetDec of { name : symbol; ty : ty option; value : exp; pos : pos }

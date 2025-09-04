@@ -10,12 +10,12 @@
 %token <int> INT
 %token <string> STRING
 %token <string> HOL_TERM
-%token LET IN DEF TYPE MATCH IF THEN ELSE TRUE FALSE
+%token LET IN DEF TYPE ALIAS MATCH IF THEN ELSE TRUE FALSE FN
 %token REQUIRES ENSURES MUST HAVE PROVE MEASURE
 %token COMMA COLON SEMICOLON LPAREN RPAREN LBRACK RBRACK
 %token LBRACE RBRACE DOT ARROW DARROW BAR UNDERSCORE
 %token PLUS MINUS TIMES DIVIDE EQ NEQ LT LE GT GE AND OR
-%token ASSIGN
+%token ASSIGN COLONEQ
 
 %type <program> program
 %type <dec> declaration
@@ -75,6 +75,12 @@ declaration:
   | type_declaration { $1 }
 
 type_declaration:
+  | ALIAS ID ASSIGN type_expr {
+      TypeDec { name = $2; type_params = []; definition = AliasDef $4; pos = $startpos }
+    }
+  | ALIAS ID LT TYPE_PARAM GT ASSIGN type_expr {
+      TypeDec { name = $2; type_params = [$4]; definition = AliasDef $7; pos = $startpos }
+    }
   | TYPE ID ASSIGN variant_list {
       TypeDec { name = $2; type_params = []; definition = VariantDef $4; pos = $startpos }
     }
@@ -119,6 +125,9 @@ expression:
     }
   | CONSTRUCTOR {
       ConstructorExp ($1, [], $startpos)
+    }
+  | FN LPAREN parameter_list RPAREN ARROW expression {
+      LambdaExp ($3, $6, $startpos)
     }
   | LPAREN expression RPAREN { $2 }
 

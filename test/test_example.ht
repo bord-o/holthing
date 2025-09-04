@@ -1,15 +1,3 @@
-let x = Some(99)
-let y = None
-
-type option<'a> = Some(int) | None
-
-def test(opt: option<int>) -> int {
-    match opt {
-        Some(n) => if n == 0 then 1 else n
-        None => 1
-    }
-}
-requires `?n. $1 = None \/ $1 = Some n`
-ensures `!n. test n != 0`
-
-let res = test(y) + test(x)
+let x = 42
+let y = true
+let z = x + 1

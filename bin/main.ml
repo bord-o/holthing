@@ -26,5 +26,13 @@ let () =
   if Array.length Sys.argv < 2 then
     Printf.eprintf "Usage: %s <filename>\n" Sys.argv.(0)
   else
-    let _ = parse_file Sys.argv.(1) in
-    ()
+    let ast = parse_file Sys.argv.(1) in
+    Printf.printf "Running type checker...\n";
+    match Semant.check_all Semant.default_env ast with
+    | Ok env ->
+        Printf.printf "Type checking successful!\n";
+        Printf.printf "Final environment has %d values, %d functions, %d types\n"
+          (List.length env.vals) (List.length env.funs) (List.length env.types)
+    | Error error ->
+        Printf.eprintf "Type checking failed: %s\n" (Format.asprintf "%a" Semant.pp_type_error error);
+        exit 1
