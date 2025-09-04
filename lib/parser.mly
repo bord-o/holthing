@@ -38,11 +38,15 @@
 %type <literal> literal
 
 %right IN
+%right ARROW  
+%right DARROW
 %left OR
-%left AND
+%left AND  
 %nonassoc EQ NEQ LT LE GT GE
 %left PLUS MINUS
 %left TIMES DIVIDE
+%right ELSE
+%left LPAREN
 %nonassoc UMINUS
 
 %start <program> main

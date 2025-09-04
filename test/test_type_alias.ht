@@ -1,3 +1,2 @@
-// Test 4: Type aliases
-alias MyInt = int
-let value: MyInt = 42
+alias myInt = int
+let value: myInt = 42

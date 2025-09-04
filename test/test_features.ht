@@ -1,11 +1,11 @@
 // Test the new features
 
 // Type alias
-type MyInt = int
-type Pair<'a> = ('a, 'a)
+type myInt = int
+type pair<'a> = ('a, 'a)
 
 // Recursive type definition
-type List<'a> = Nil | Cons('a, List<'a>)
+type list<'a> = Nil | Cons('a, list<'a>)
 
 // Constructor expressions and patterns
 let empty_list = Nil
@@ -21,10 +21,10 @@ let double = fn (x: int) -> x * 2
 let add_lambda = fn (x: int, y: int) -> x + y
 
 // Pattern matching with constructors
-let length = fn (lst: List<int>) -> match lst {
+let length = fn (lst: list<int>) -> match lst {
   Nil => 0
   | Cons(_, tail) => 1 + length(tail)
 }
 
 // Using type aliases
-let my_int: MyInt = 42
+let my_int: myInt = 42

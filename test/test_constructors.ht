@@ -1,4 +1,4 @@
 // Test 6: Constructor expressions (will fail since we stubbed find_constructor)
-type Option<'a> = None | Some('a)
+type option<'a> = None | Some('a)
 let x = Some(42)
 let y = None

@@ -1,0 +1,1 @@
+type intList = Nil | Cons(int, intList)

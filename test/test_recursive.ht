@@ -1,2 +1,2 @@
 // Test 5: Recursive type definitions
-type List<'a> = Nil | Cons('a, List<'a>)
+type list<'a> = Nil | Cons('a, list<'a>)
