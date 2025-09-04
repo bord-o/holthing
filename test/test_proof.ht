@@ -1,0 +1,77 @@
+
+def max(a : int, b : int)  {
+    if a > b then a else b
+}
+requires `a < max_integer /\ b < max_integer`
+ensures `max_out >= a /\  max_out >= b`
+ensures `max_out = a \/ max_out = b`
+
+
+def max3(a : int, b : int, c : int) -> int {
+    let inner = max(a, b) in max(inner, c)
+}
+ensures `max3_out >= a /\ max3_out >= b /\ max3_out >= c`
+
+
+/*
+Here we would expect to see that the postconditions from max are instantiated in max3
+
+
+max3 would then get
+
+
+these are bound over everything below
+    have `let inner = max(a, b)
+    have `let max3_out = max(inner, c)
+
+from max's requires we get two goals
+    must `a < max_integer /\ b < max_integer`
+    must `inner < max_integer /\ c < max_integer`
+
+
+from inner call:
+    have `inner >= a /\  inner >= b`
+    have `inner = a \/ inner = b`
+
+from outer call:
+    have `max3_out >= inner /\  max3_out >= c`
+    have `max3_out = inner \/ max3_out = c`
+
+for a final proof state of 
+
+    (*these are data we get for free by using the max function*)
+    have `inner >= a /\  inner >= b`
+    have `inner = a \/ inner = b`
+    have `max3_out >= inner /\  max3_out >= c`
+    have `max3_out = inner \/ max3_out = c`
+
+    (*these are what we must uphold for the above assumptions to hold*)
+    must `a < max_integer /\ b < max_integer`
+    must `inner < max_integer /\ c < max_integer`
+
+    (* This is the actual goal *)
+    ensures `max3_out >= a /\ max3_out >= b /\ max3_out >= c`
+
+*/
+
+
+
+// what if it was defined weird?
+def max3(a : int, b : int, c : int) -> int {
+    let inner = {
+        let foo = a in
+        let bar = b in
+        let baz = a + b in
+        max(bar + foo, baz)
+    }
+    in
+    max(inner, c)
+}
+
+/*
+our proof generator would need to 
+- identify any function call regardless of its nesting or complexity in how its called
+- would built in HOL Let_def unfolding do this for us if we translated all of our definitions to HOL Light first?
+
+*/
+

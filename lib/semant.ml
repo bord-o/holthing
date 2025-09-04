@@ -417,67 +417,51 @@ let check_dec env dec =
                 validate_params ((param.name, validated_ty) :: acc) rest
             | Error e -> Error e)
       in
-      match validate_params [] params with
-      | Error e -> Error e
-      | Ok param_types -> (
-          let param_env =
-            List.fold_left
-              (fun env (name, ty) -> add_val name ty env)
-              env param_types
+      let* param_types = validate_params [] params in
+      let param_env =
+        List.fold_left
+          (fun env (name, ty) -> add_val name ty env)
+          env param_types
+      in
+      (* Add the function's own type for recursive calls *)
+      let provisional_return_type =
+        match return_ty with
+        | Some declared_ty -> declared_ty
+        | None -> NameTy ("unit", pos)
+        (* Will be corrected after body type checking *)
+      in
+      let provisional_fun_type =
+        List.fold_right
+          (fun param acc_type -> FunTy (param.ty, acc_type, pos))
+          params provisional_return_type
+      in
+      let func_env = add_val name provisional_fun_type param_env in
+
+      let* body_type = check_exp func_env body in
+      match return_ty with
+      | None ->
+          let fun_info =
+            { name; params; return_type = Some body_type; body; specs }
           in
-          (* Add the function's own type for recursive calls *)
-          let provisional_return_type =
-            match return_ty with
-            | Some declared_ty -> declared_ty
-            | None -> NameTy ("unit", pos)
-            (* Will be corrected after body type checking *)
-          in
-          let provisional_fun_type =
+          let fun_type =
             List.fold_right
               (fun param acc_type -> FunTy (param.ty, acc_type, pos))
-              params provisional_return_type
+              params body_type
           in
-          let func_env = add_val name provisional_fun_type param_env in
-          match check_exp func_env body with
-          | Error e -> Error e
-          | Ok body_type -> (
-              match return_ty with
-              | None ->
-                  let fun_info =
-                    { name; params; return_type = Some body_type; body; specs }
-                  in
-                  let fun_type =
-                    List.fold_right
-                      (fun param acc_type -> FunTy (param.ty, acc_type, pos))
-                      params body_type
-                  in
-                  Ok
-                    (add_fun name fun_info (add_val name fun_type env), fun_type)
-              | Some declared_ty -> (
-                  match validate_type env declared_ty with
-                  | Error e -> Error e
-                  | Ok validated_ty ->
-                      if types_equal body_type validated_ty then
-                        let fun_info =
-                          {
-                            name;
-                            params;
-                            return_type = Some validated_ty;
-                            body;
-                            specs;
-                          }
-                        in
-                        let fun_type =
-                          List.fold_right
-                            (fun param acc_type ->
-                              FunTy (param.ty, acc_type, pos))
-                            params validated_ty
-                        in
-                        Ok
-                          ( add_fun name fun_info (add_val name fun_type env),
-                            fun_type )
-                      else Error (TypeMismatch (validated_ty, body_type, pos))))
-          ))
+          Ok (add_fun name fun_info (add_val name fun_type env), fun_type)
+      | Some declared_ty ->
+          let* validated_ty = validate_type env declared_ty in
+          if types_equal body_type validated_ty then
+            let fun_info =
+              { name; params; return_type = Some validated_ty; body; specs }
+            in
+            let fun_type =
+              List.fold_right
+                (fun param acc_type -> FunTy (param.ty, acc_type, pos))
+                params validated_ty
+            in
+            Ok (add_fun name fun_info (add_val name fun_type env), fun_type)
+          else Error (TypeMismatch (validated_ty, body_type, pos)))
   | TypeDec { name; type_params; definition; pos } -> (
       let param_env =
         List.fold_left

@@ -33,7 +33,10 @@ let () =
         Printf.printf "Type checking successful!\n";
         Printf.printf
           "Final environment has %d values, %d functions, %d types\n"
-          (List.length env.vals) (List.length env.funs) (List.length env.types)
+          (List.length env.vals) (List.length env.funs) (List.length env.types);
+        let hol = Proof.hol_of_def (snd (List.hd env.funs)) in
+        print_endline hol
+
     | Error error ->
         Printf.eprintf "Type checking failed: %s\n"
           (Format.asprintf "%a" Semant.pp_type_error error);
