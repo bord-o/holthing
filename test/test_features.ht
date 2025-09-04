@@ -2,7 +2,7 @@
 
 // Type alias
 alias myInt = int
-type pair<'a> = ('a, 'a)
+type pair<'a> = Pair('a, 'a)
 
 // Recursive type definition
 type list<'a> = Nil | Cons('a, list<'a>)

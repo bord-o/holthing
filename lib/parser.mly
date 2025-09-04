@@ -36,6 +36,7 @@
 %type <variant> variant
 %type <variant list> variant_list
 %type <literal> literal
+%type <string list> type_param_list
 
 %right IN
 %right ARROW  
@@ -82,14 +83,14 @@ type_declaration:
   | ALIAS ID ASSIGN type_expr {
       TypeDec { name = $2; type_params = []; definition = AliasDef $4; pos = $startpos }
     }
-  | ALIAS ID LT TYPE_PARAM GT ASSIGN type_expr {
-      TypeDec { name = $2; type_params = [$4]; definition = AliasDef $7; pos = $startpos }
+  | ALIAS ID LT type_param_list GT ASSIGN type_expr {
+      TypeDec { name = $2; type_params = $4; definition = AliasDef $7; pos = $startpos }
     }
   | TYPE ID ASSIGN variant_list {
       TypeDec { name = $2; type_params = []; definition = VariantDef $4; pos = $startpos }
     }
-  | TYPE ID LT TYPE_PARAM GT ASSIGN variant_list {
-      TypeDec { name = $2; type_params = [$4]; definition = VariantDef $7; pos = $startpos }
+  | TYPE ID LT type_param_list GT ASSIGN variant_list {
+      TypeDec { name = $2; type_params = $4; definition = VariantDef $7; pos = $startpos }
     }
 
 expression:
@@ -208,3 +209,7 @@ proof_spec:
   | HAVE HOL_TERM { Have ($2, $startpos) }
   | PROVE HOL_TERM { Prove ($2, $startpos) }
   | MEASURE HOL_TERM { Measure ($2, $startpos) }
+
+type_param_list:
+  | TYPE_PARAM { [$1] }
+  | TYPE_PARAM COMMA type_param_list { $1 :: $3 }

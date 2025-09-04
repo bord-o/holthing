@@ -1,0 +1,240 @@
+// Comprehensive parser test for all implemented language features
+// This file tests parsing only - type checking may fail 
+
+// ===== TYPE ALIASES =====
+alias myInt = int
+alias myBool = bool  
+alias myString = string
+alias myUnit = unit
+
+// ===== SIMPLE VARIANT TYPES =====
+type color = Red | Green | Blue
+type direction = North | South | East | West
+type weekday = Monday | Tuesday | Wednesday | Thursday | Friday
+
+// ===== VARIANT TYPES WITH ARGUMENTS =====
+type shape = Circle(int) | Rectangle(int, int) | Triangle(int, int, int)
+type result = Success(int) | Error(string)
+type tree = Leaf(int) | Node(tree, int, tree)
+
+// ===== GENERIC VARIANT TYPES =====
+type option<'a> = None | Some('a)
+type list<'a> = Nil | Cons('a, list<'a>)
+type pair<'a> = Pair('a, 'a)
+type either<'a, 'b> = Left('a) | Right('b)
+type triple<'a, 'b, 'c> = Triple('a, 'b, 'c)
+
+// ===== RECURSIVE TYPES =====
+type intList = Nil | Cons(int, intList)
+type binaryTree = Empty | Branch(int, binaryTree, binaryTree)
+type stringTree = Leaf | Node(string, stringTree, stringTree)
+
+// ===== BASIC EXPRESSIONS =====
+let x = 42
+let y = true
+let z = false
+let s = "hello"
+let u = ()
+
+// ===== ARITHMETIC EXPRESSIONS =====
+let add_result = x + 1
+let sub_result = x - 1  
+let mul_result = x * 2
+let div_result = x / 2
+let neg_result = -x
+
+// ===== COMPARISON EXPRESSIONS =====
+let eq_test = x == 42
+let neq_test = x != 0
+let lt_test = x < 100
+let le_test = x <= 42
+let gt_test = x > 0
+let ge_test = x >= 42
+
+// ===== LOGICAL EXPRESSIONS =====
+let and_test = y && z
+let or_test = y || z
+
+// ===== TYPED BINDINGS =====
+let typed_int: int = 42
+let typed_bool: bool = true
+let typed_string: string = "world"
+let typed_alias: myInt = 100
+
+// ===== IF-THEN-ELSE EXPRESSIONS =====
+let conditional = if y then 1 else 0
+let nested_if = if x > 0 then if y then 1 else 2 else 3
+
+// ===== LET-IN EXPRESSIONS =====
+let let_result = let a = 10 in let b = 20 in a + b
+let typed_let = let c: int = 30 in c * 2
+
+// ===== BLOCK EXPRESSIONS =====
+let block_result = { 
+  let temp = 5 in
+  temp + 10
+}
+
+let multi_stmt_block = {
+  let a = 1 in
+  let b = 2 in
+  let c = 3 in
+  a + b + c
+}
+
+// ===== SIMPLE FUNCTIONS =====
+def identity(x: int) -> int { x }
+def add_one(x: int) -> int { x + 1 }
+def is_positive(x: int) -> bool { x > 0 }
+
+// ===== MULTI-ARGUMENT FUNCTIONS =====  
+def add(x: int, y: int) -> int { x + y }
+def multiply(x: int, y: int) -> int { x * y }
+def max(x: int, y: int) -> int { if x > y then x else y }
+
+// ===== FUNCTIONS WITH COMPLEX BODIES =====
+def factorial_helper(n: int) -> int {
+  if n <= 1 then 1 else n * factorial_helper(n - 1)
+}
+
+def complex_function(a: int, b: int, c: int) -> int {
+  let temp1 = a + b in
+  let temp2 = temp1 * c in
+  if temp2 > 100 then temp2 else temp2 + 50
+}
+
+// ===== FUNCTION CALLS =====
+let call_result1 = identity(42)
+let call_result2 = add(10, 20)
+let call_result3 = max(call_result1, call_result2)
+
+// ===== PARTIAL APPLICATION =====
+let add_five = add(5)
+let multiply_by_three = multiply(3)
+let partial_result1 = add_five(10)
+let partial_result2 = multiply_by_three(7)
+
+// ===== LAMBDA EXPRESSIONS =====
+let double = fn (x: int) -> x * 2
+let square = fn (x: int) -> x * x
+let add_lambda = fn (x: int, y: int) -> x + y
+
+// ===== LAMBDA CALLS =====
+let lambda_result1 = double(21)
+let lambda_result2 = square(6)
+let lambda_result3 = add_lambda(15, 25)
+
+// ===== CONSTRUCTOR EXPRESSIONS (nullary) =====
+let red = Red
+let monday = Monday
+let none_val = None
+let empty_tree = Empty
+
+// ===== CONSTRUCTOR EXPRESSIONS (with arguments) =====
+let circle = Circle(10)
+let rectangle = Rectangle(5, 10)
+let success = Success(42)
+let error = Error("failed")
+let some_val = Some(100)
+let cons_list = Cons(1, Nil)
+
+// ===== NESTED CONSTRUCTOR EXPRESSIONS =====
+let nested_list = Cons(1, Cons(2, Cons(3, Nil)))
+let binary_tree = Branch(10, Branch(5, Empty, Empty), Branch(15, Empty, Empty))
+let generic_pair = Pair(Success(42), Error("oops"))
+
+// ===== MATCH EXPRESSIONS =====
+let color_match = match red {
+  Red => 1
+  Green => 2  
+  Blue => 3
+}
+
+let option_match = match some_val {
+  None => 0
+  Some(x) => x
+}
+
+let list_match = match cons_list {
+  Nil => 0
+  Cons(head, tail) => head
+}
+
+// ===== COMPLEX MATCH EXPRESSIONS =====
+let tree_depth = match binary_tree {
+  Empty => 0
+  Branch(val, left, right) => 1 + max(tree_depth, tree_depth)
+}
+
+let nested_match = match Pair(Some(42), None) {
+  Pair(None, None) => 0
+  Pair(Some(x), None) => x
+  Pair(None, Some(y)) => y  
+  Pair(Some(x), Some(y)) => x + y
+}
+
+// ===== WILDCARD PATTERNS =====
+let wildcard_match = match rectangle {
+  Circle(_) => "circle"
+  Rectangle(_, _) => "rectangle"
+  Triangle(_, _, _) => "triangle"
+}
+
+// ===== LITERAL PATTERNS =====
+let literal_match = match x {
+  0 => "zero"
+  42 => "forty-two"
+  _ => "other"
+}
+
+// ===== FUNCTIONS WITH PATTERN MATCHING =====
+def list_length(lst: intList) -> int {
+  match lst {
+    Nil => 0
+    Cons(_, tail) => 1 + list_length(tail)
+  }
+}
+
+def tree_size(t: binaryTree) -> int {
+  match t {
+    Empty => 0
+    Branch(_, left, right) => 1 + tree_size(left) + tree_size(right)
+  }
+}
+
+// ===== FUNCTION TYPE ANNOTATIONS =====
+def curry_test(f: int, g: int) -> int { f + g }
+def higher_order_placeholder(x: int) -> int { x }
+
+// ===== COMPLEX NESTED EXPRESSIONS =====
+let complex_expr = {
+  let base = 10 in
+  let multiplier = fn (x: int) -> x * base in
+  let list = Cons(1, Cons(2, Cons(3, Nil))) in
+  let result = match list {
+    Nil => 0
+    Cons(head, _) => multiplier(head)
+  } in
+  if result > 5 then result else result + base
+}
+
+// ===== PROOF SPECIFICATIONS (syntax only) =====
+def proven_add(x: int, y: int) -> int { 
+  x + y 
+}
+requires `x >= 0 /\ y >= 0`
+ensures `result >= 0`
+
+def measured_factorial(n: int) -> int {
+  if n <= 1 then 1 else n * measured_factorial(n - 1)
+}
+measure `n`
+
+// RECURSIVE FUNCTION
+def fib(n: int) -> int {
+    match n {
+        0 => 0
+        1 => 1
+        n => fib(n-1) + fib(n-1)
+    }
+}

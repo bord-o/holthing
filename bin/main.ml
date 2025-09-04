@@ -31,8 +31,10 @@ let () =
     match Semant.check_all Semant.default_env ast with
     | Ok env ->
         Printf.printf "Type checking successful!\n";
-        Printf.printf "Final environment has %d values, %d functions, %d types\n"
+        Printf.printf
+          "Final environment has %d values, %d functions, %d types\n"
           (List.length env.vals) (List.length env.funs) (List.length env.types)
     | Error error ->
-        Printf.eprintf "Type checking failed: %s\n" (Format.asprintf "%a" Semant.pp_type_error error);
+        Printf.eprintf "Type checking failed: %s\n"
+          (Format.asprintf "%a" Semant.pp_type_error error);
         exit 1
