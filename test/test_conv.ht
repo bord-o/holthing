@@ -1,0 +1,14 @@
+
+type mylist = Nil | Cons(int, mylist)
+
+def mylist_length(l : mylist) -> int {
+    match l {
+        Nil => 0
+        Cons(h, tl) => 1 + mylist_length(tl)
+    }
+}
+
+
+def fib(n : int) -> int {
+    if n < 2 then n else {fib(n-2) + fib(n-1)}
+}
