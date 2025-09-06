@@ -179,7 +179,7 @@ let rec check_exp env exp =
       | Some ty -> Ok ty
       | None -> Error (UnboundVariable (name, pos)))
   | LiteralExp (lit, _) -> Ok (get_literal_type lit)
-  | CallExp (func_exp, args, pos) -> (
+  | CallExp (func_exp, args, pos) ->
       let* func_type = check_exp env func_exp in
       let rec check_args acc = function
         | [] -> Ok (List.rev acc)
@@ -188,127 +188,94 @@ let rec check_exp env exp =
             | Ok arg_type -> check_args (arg_type :: acc) rest
             | Error e -> Error e)
       in
-      match check_args [] args with
-      | Error e -> Error e
-      | Ok arg_types ->
-          let rec apply_args func_ty args_left =
-            match (func_ty, args_left) with
-            | _, [] -> Ok func_ty
-            | FunTy (param_type, return_type, _), arg_type :: rest_args ->
-                if types_equal param_type arg_type then
-                  apply_args return_type rest_args
-                else Error (TypeMismatch (param_type, arg_type, pos))
-            | _ ->
-                Error
-                  (TypeMismatch
-                     ( FunTy (NameTy ("?", pos), NameTy ("?", pos), pos),
-                       func_ty,
-                       pos ))
-          in
-          apply_args func_type arg_types)
-  | BinOpExp (left, op, right, pos) -> (
-      match check_exp env left with
-      | Error e -> Error e
-      | Ok left_type -> (
-          match check_exp env right with
-          | Error e -> Error e
-          | Ok right_type ->
-              let expected_left, expected_right, result_type =
-                get_binop_type op
-              in
-              if
-                types_equal left_type expected_left
-                && types_equal right_type expected_right
-              then Ok result_type
-              else if not (types_equal left_type expected_left) then
-                Error (TypeMismatch (expected_left, left_type, pos))
-              else Error (TypeMismatch (expected_right, right_type, pos))))
-  | UnaryOpExp ("-", exp, pos) -> (
-      match check_exp env exp with
-      | Error e -> Error e
-      | Ok exp_type ->
-          let int_type = NameTy ("int", pos) in
-          if types_equal exp_type int_type then Ok int_type
-          else Error (TypeMismatch (int_type, exp_type, pos)))
+      let* arg_types = check_args [] args in
+      let rec apply_args func_ty args_left =
+        match (func_ty, args_left) with
+        | _, [] -> Ok func_ty
+        | FunTy (param_type, return_type, _), arg_type :: rest_args ->
+            if types_equal param_type arg_type then
+              apply_args return_type rest_args
+            else Error (TypeMismatch (param_type, arg_type, pos))
+        | _ ->
+            Error
+              (TypeMismatch
+                 ( FunTy (NameTy ("?", pos), NameTy ("?", pos), pos),
+                   func_ty,
+                   pos ))
+      in
+      apply_args func_type arg_types
+  | BinOpExp (left, op, right, pos) ->
+      let* left_type = check_exp env left in
+      let* right_type = check_exp env right in
+      let expected_left, expected_right, result_type = get_binop_type op in
+      if
+        types_equal left_type expected_left
+        && types_equal right_type expected_right
+      then Ok result_type
+      else if not (types_equal left_type expected_left) then
+        Error (TypeMismatch (expected_left, left_type, pos))
+      else Error (TypeMismatch (expected_right, right_type, pos))
+  | UnaryOpExp ("-", exp, pos) ->
+      let* exp_type = check_exp env exp in
+      let int_type = NameTy ("int", pos) in
+      if types_equal exp_type int_type then Ok int_type
+      else Error (TypeMismatch (int_type, exp_type, pos))
   | UnaryOpExp (op, _, pos) ->
       Error (Other ("Unknown unary operator: " ^ op, pos))
-  | IfExp (cond, then_exp, else_exp, pos) -> (
-      match check_exp env cond with
-      | Error e -> Error e
-      | Ok cond_type -> (
-          match check_exp env then_exp with
-          | Error e -> Error e
-          | Ok then_type -> (
-              match check_exp env else_exp with
-              | Error e -> Error e
-              | Ok else_type ->
-                  let bool_type = NameTy ("bool", pos) in
-                  if not (types_equal cond_type bool_type) then
-                    Error (TypeMismatch (bool_type, cond_type, pos))
-                  else if not (types_equal then_type else_type) then
-                    Error (TypeMismatch (then_type, else_type, pos))
-                  else Ok then_type)))
+  | IfExp (cond, then_exp, else_exp, pos) ->
+      let* cond_type = check_exp env cond in
+      let* then_type = check_exp env then_exp in
+      let* else_type = check_exp env else_exp in
+      let bool_type = NameTy ("bool", pos) in
+      if not (types_equal cond_type bool_type) then
+        Error (TypeMismatch (bool_type, cond_type, pos))
+      else if not (types_equal then_type else_type) then
+        Error (TypeMismatch (then_type, else_type, pos))
+      else Ok then_type
   | LetExp (name, ty_opt, value_exp, body_exp, pos) -> (
-      match check_exp env value_exp with
-      | Error e -> Error e
-      | Ok value_type -> (
-          match ty_opt with
-          | None ->
-              let new_env = add_val name value_type env in
-              check_exp new_env body_exp
-          | Some declared_ty -> (
-              match validate_type env declared_ty with
-              | Error e -> Error e
-              | Ok validated_ty ->
-                  if types_equal value_type validated_ty then
-                    let new_env = add_val name validated_ty env in
-                    check_exp new_env body_exp
-                  else Error (TypeMismatch (validated_ty, value_type, pos)))))
+      let* value_type = check_exp env value_exp in
+      match ty_opt with
+      | None ->
+          let new_env = add_val name value_type env in
+          check_exp new_env body_exp
+      | Some declared_ty ->
+          let* validated_ty = validate_type env declared_ty in
+          if types_equal value_type validated_ty then
+            let new_env = add_val name validated_ty env in
+            check_exp new_env body_exp
+          else Error (TypeMismatch (validated_ty, value_type, pos)))
   | BlockExp (exps, pos) -> (
       match List.rev exps with
       | [] -> Ok (NameTy ("unit", pos))
-      | last :: rest -> (
+      | last :: rest ->
           let rec check_rest = function
             | [] -> Ok ()
-            | exp :: remaining -> (
-                match check_exp env exp with
-                | Ok _ -> check_rest remaining
-                | Error e -> Error e)
+            | exp :: remaining ->
+                let* _ = check_exp env exp in
+                check_rest remaining
           in
-          match check_rest (List.rev rest) with
-          | Error e -> Error e
-          | Ok () -> check_exp env last))
+          let* () = check_rest (List.rev rest) in
+          check_exp env last)
   | MatchExp (scrutinee, cases, pos) -> (
-      match check_exp env scrutinee with
-      | Error e -> Error e
-      | Ok scrutinee_type -> (
-          let rec check_cases acc = function
-            | [] -> Ok (List.rev acc)
-            | (pattern, exp) :: rest -> (
-                match check_pattern env pattern scrutinee_type with
-                | Error e -> Error e
-                | Ok pattern_env -> (
-                    match check_exp pattern_env exp with
-                    | Error e -> Error e
-                    | Ok exp_type -> check_cases (exp_type :: acc) rest))
-          in
-          match check_cases [] cases with
-          | Error e -> Error e
-          | Ok case_types -> (
-              match case_types with
-              | [] -> Error (Other ("Empty match expression", pos))
-              | first_type :: rest_types ->
-                  let all_same =
-                    List.for_all (types_equal first_type) rest_types
-                  in
-                  if all_same then Ok first_type
-                  else
-                    Error (Other ("Match branches have different types", pos))))
-      )
+      let* scrutinee_type = check_exp env scrutinee in
+      let rec check_cases acc = function
+        | [] -> Ok (List.rev acc)
+        | (pattern, exp) :: rest ->
+            let* pattern_env = check_pattern env pattern scrutinee_type in
+            let* exp_type = check_exp pattern_env exp in
+            check_cases (exp_type :: acc) rest
+      in
+      let* case_types = check_cases [] cases in
+      match case_types with
+      | [] -> Error (Other ("Empty match expression", pos))
+      | first_type :: rest_types ->
+          let all_same = List.for_all (types_equal first_type) rest_types in
+          if all_same then Ok first_type
+          else Error (Other ("Match branches have different types", pos)))
   | ConstructorExp (name, args, pos) -> (
       match find_constructor name env with
       | None -> Error (UnboundConstructor (name, pos))
-      | Some ctor -> (
+      | Some ctor ->
           let rec check_args acc expected_types actual_args =
             match (expected_types, actual_args) with
             | [], [] -> Ok (List.rev acc)
@@ -320,43 +287,34 @@ let rec check_exp env exp =
                 Error
                   (ArityMismatch
                      (List.length ctor.arg_types, List.length args, pos))
-            | expected_type :: rest_expected, actual_arg :: rest_actual -> (
-                match check_exp env actual_arg with
-                | Error e -> Error e
-                | Ok actual_type ->
-                    if types_equal expected_type actual_type then
-                      check_args (actual_type :: acc) rest_expected rest_actual
-                    else Error (TypeMismatch (expected_type, actual_type, pos)))
+            | expected_type :: rest_expected, actual_arg :: rest_actual ->
+                let* actual_type = check_exp env actual_arg in
+                if types_equal expected_type actual_type then
+                  check_args (actual_type :: acc) rest_expected rest_actual
+                else Error (TypeMismatch (expected_type, actual_type, pos))
           in
-          match check_args [] ctor.arg_types args with
-          | Error e -> Error e
-          | Ok _ -> Ok ctor.return_type))
-  | LambdaExp (params, body, pos) -> (
+          let* _ = check_args [] ctor.arg_types args in
+          Ok ctor.return_type)
+  | LambdaExp (params, body, pos) ->
       let rec validate_params acc = function
         | [] -> Ok (List.rev acc)
-        | param :: rest -> (
-            match validate_type env param.ty with
-            | Ok validated_ty ->
-                validate_params ((param.name, validated_ty) :: acc) rest
-            | Error e -> Error e)
+        | param :: rest ->
+            let* validated_ty = validate_type env param.ty in
+            validate_params ((param.name, validated_ty) :: acc) rest
       in
-      match validate_params [] params with
-      | Error e -> Error e
-      | Ok param_types -> (
-          let lambda_env =
-            List.fold_left
-              (fun env (name, ty) -> add_val name ty env)
-              env param_types
-          in
-          match check_exp lambda_env body with
-          | Error e -> Error e
-          | Ok body_type ->
-              let lambda_type =
-                List.fold_right
-                  (fun param acc_type -> FunTy (param.ty, acc_type, pos))
-                  params body_type
-              in
-              Ok lambda_type))
+      let* param_types = validate_params [] params in
+      let lambda_env =
+        List.fold_left
+          (fun env (name, ty) -> add_val name ty env)
+          env param_types
+      in
+      let* body_type = check_exp lambda_env body in
+      let lambda_type =
+        List.fold_right
+          (fun param acc_type -> FunTy (param.ty, acc_type, pos))
+          params body_type
+      in
+      Ok lambda_type
 
 and check_pattern env pattern expected_type =
   match pattern with
@@ -381,11 +339,11 @@ and check_pattern env pattern expected_type =
               match (expected_types, actual_patterns) with
               | [], [] -> Ok acc
               | expected_type :: rest_expected, actual_pattern :: rest_patterns
-                -> (
-                  match check_pattern acc actual_pattern expected_type with
-                  | Error e -> Error e
-                  | Ok updated_env ->
-                      check_patterns updated_env rest_expected rest_patterns)
+                ->
+                  let* updated_env =
+                    check_pattern acc actual_pattern expected_type
+                  in
+                  check_patterns updated_env rest_expected rest_patterns
               | _ ->
                   Error
                     (ArityMismatch
@@ -396,26 +354,20 @@ and check_pattern env pattern expected_type =
 let check_dec env dec =
   match dec with
   | LetDec { name; ty; value; pos } -> (
-      match check_exp env value with
-      | Error e -> Error e
-      | Ok value_type -> (
-          match ty with
-          | None -> Ok (add_val name value_type env, value_type)
-          | Some declared_ty -> (
-              match validate_type env declared_ty with
-              | Error e -> Error e
-              | Ok validated_ty ->
-                  if types_equal value_type validated_ty then
-                    Ok (add_val name validated_ty env, validated_ty)
-                  else Error (TypeMismatch (validated_ty, value_type, pos)))))
+      let* value_type = check_exp env value in
+      match ty with
+      | None -> Ok (add_val name value_type env, value_type)
+      | Some declared_ty ->
+          let* validated_ty = validate_type env declared_ty in
+          if types_equal value_type validated_ty then
+            Ok (add_val name validated_ty env, validated_ty)
+          else Error (TypeMismatch (validated_ty, value_type, pos)))
   | FunDec { name; params; return_ty; body; specs; pos } -> (
       let rec validate_params acc = function
         | [] -> Ok (List.rev acc)
-        | param :: rest -> (
-            match validate_type env param.ty with
-            | Ok validated_ty ->
-                validate_params ((param.name, validated_ty) :: acc) rest
-            | Error e -> Error e)
+        | param :: rest ->
+            let* validated_ty = validate_type env param.ty in
+            validate_params ((param.name, validated_ty) :: acc) rest
       in
       let* param_types = validate_params [] params in
       let param_env =
@@ -474,63 +426,54 @@ let check_dec env dec =
       in
       let recursive_env = add_type name recursive_type_info param_env in
       match definition with
-      | VariantDef variants -> (
+      | VariantDef variants ->
           let rec validate_variants acc = function
             | [] -> Ok (List.rev acc)
-            | variant :: rest -> (
+            | variant :: rest ->
                 let rec validate_args acc_args = function
                   | [] -> Ok (List.rev acc_args)
-                  | arg_type :: rest_args -> (
-                      match validate_type recursive_env arg_type with
-                      | Ok validated_ty ->
-                          validate_args (validated_ty :: acc_args) rest_args
-                      | Error e -> Error e)
+                  | arg_type :: rest_args ->
+                      let* validated_ty =
+                        validate_type recursive_env arg_type
+                      in
+                      validate_args (validated_ty :: acc_args) rest_args
                 in
-                match validate_args [] variant.args with
-                | Error e -> Error e
-                | Ok validated_arg_types ->
-                    let return_type =
-                      if type_params = [] then NameTy (name, pos)
-                      else
-                        GenericTy
-                          ( name,
-                            List.map (fun p -> NameTy (p, pos)) type_params,
-                            pos )
-                    in
-                    let ctor_info =
-                      {
-                        name = variant.name;
-                        arg_types = validated_arg_types;
-                        return_type;
-                      }
-                    in
-                    validate_variants (ctor_info :: acc) rest)
+                let* validated_arg_types = validate_args [] variant.args in
+                let return_type =
+                  if type_params = [] then NameTy (name, pos)
+                  else
+                    GenericTy
+                      ( name,
+                        List.map (fun p -> NameTy (p, pos)) type_params,
+                        pos )
+                in
+                let ctor_info =
+                  {
+                    name = variant.name;
+                    arg_types = validated_arg_types;
+                    return_type;
+                  }
+                in
+                validate_variants (ctor_info :: acc) rest
           in
-          match validate_variants [] variants with
-          | Error e -> Error e
-          | Ok constructors ->
-              let type_info =
-                { name; type_params; constructors; alias = None }
-              in
-              Ok (add_type name type_info env, NameTy (name, pos)))
-      | AliasDef aliased_type -> (
-          match validate_type recursive_env aliased_type with
-          | Error e -> Error e
-          | Ok validated_alias ->
-              let type_info =
-                {
-                  name;
-                  type_params;
-                  constructors = [];
-                  alias = Some validated_alias;
-                }
-              in
-              Ok (add_type name type_info env, NameTy (name, pos))))
+          let* constructors = validate_variants [] variants in
+          let type_info = { name; type_params; constructors; alias = None } in
+          Ok (add_type name type_info env, NameTy (name, pos))
+      | AliasDef aliased_type ->
+          let* validated_alias = validate_type recursive_env aliased_type in
+          let type_info =
+            {
+              name;
+              type_params;
+              constructors = [];
+              alias = Some validated_alias;
+            }
+          in
+          Ok (add_type name type_info env, NameTy (name, pos)))
 
 let rec check_all env program =
   match program with
   | [] -> Ok env
-  | dec :: decs -> (
-      match check_dec env dec with
-      | Error e -> Error e
-      | Ok (updated_env, _) -> check_all updated_env decs)
+  | dec :: decs ->
+      let* updated_env, _ = check_dec env dec in
+      check_all updated_env decs
