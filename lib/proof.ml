@@ -52,7 +52,7 @@ let rec hol_of_exp (body : Absyn.exp) =
   | Absyn.LiteralExp (lit, _) -> hol_of_lit lit
   | Absyn.CallExp (caller, args, _) ->
       let caller_hol = hol_of_exp caller in
-      let args_hol = List.map hol_of_exp args |> List.rev in
+      let args_hol = List.map hol_of_exp args in
       pattern_hol_call ~caller:caller_hol ~args:args_hol
   | Absyn.BinOpExp (left, oper, right, _) -> (
       let left_hol = hol_of_exp left in
@@ -69,8 +69,8 @@ let rec hol_of_exp (body : Absyn.exp) =
       | Absyn.Le -> pattern_hol_op "<="
       | Absyn.Gt -> pattern_hol_op ">"
       | Absyn.Ge -> pattern_hol_op ">="
-      | Absyn.And -> pattern_hol_op "/\\"
-      | Absyn.Or -> pattern_hol_op "\\/")
+      | Absyn.And -> pattern_hol_op {|/\|}
+      | Absyn.Or -> pattern_hol_op {|\/|})
   | Absyn.UnaryOpExp (oper, expr, _) ->
       let expr_hol = hol_of_exp expr in
       Printf.sprintf "(%s%s)" oper expr_hol
@@ -92,7 +92,7 @@ let rec hol_of_exp (body : Absyn.exp) =
       let body_hol = hol_of_exp body in
       Printf.sprintf "(\\%s.%s)" params_hol body_hol
   | Absyn.ConstructorExp (name, args, _) ->
-      let args_hol = List.map hol_of_exp args |> List.rev in
+      let args_hol = List.map hol_of_exp args  in
       pattern_hol_call ~caller:name ~args:args_hol
   | Absyn.MatchExp (matchee, patterns, _) ->
       let patterns_hol =
@@ -114,9 +114,9 @@ let hol_of_ty (ty : Absyn.ty) =
   | Absyn.FunTy (_, _, _) -> failwith "TODO function types to hol"
 
 let hol_of_def (f_def : fun_info) =
-  let hol_name = f_def.name ^ "_hol" in
+  let hol_name = sanitize_hol_name f_def.name  in
   let args_hol =
-    f_def.params |> List.map (fun (p : Absyn.param) -> p.name) |> List.rev
+    f_def.params |> List.map (fun (p : Absyn.param) -> p.name)
   in
   let hol_body = hol_of_exp f_def.body in
   pattern_hol_def ~name:hol_name ~args:args_hol ~body:hol_body

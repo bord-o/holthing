@@ -72,6 +72,5 @@ def max3(a : int, b : int, c : int) -> int {
 our proof generator would need to 
 - identify any function call regardless of its nesting or complexity in how its called
 - would built in HOL Let_def unfolding do this for us if we translated all of our definitions to HOL Light first?
-
 */
 

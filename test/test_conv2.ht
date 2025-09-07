@@ -1,0 +1,86 @@
+type list = Nil | Cons(int, list)
+type option = None | Some(int)
+type result = Error(string) | Ok(int)
+type tuple = Tu(list, list)
+
+
+
+def length(l:list) -> int {
+    match l {
+        Nil => 0
+        Cons(_, xs) => 1 + length(xs)
+    }
+}
+
+def rev_aux(l:list, out:list) -> list {
+    match l {
+        Nil => out
+        Cons(x, xs) => rev_aux(xs, Cons(x, out))
+    }
+}
+
+def rev(l:list) -> list {
+    rev_aux(l, Nil)
+}
+
+def split_at_aux(i:int, l:list, acc:list) -> tuple {
+    match l {
+        Nil => Tu(acc, Nil)
+        Cons(x, xs) => {
+            if i == 0 then {
+                Tu(rev(acc), Cons(x, xs))
+            } else {
+                split_at_aux(i-1, xs, Cons(x, acc))
+            }
+        }
+    }
+}
+
+def split_at(i:int, l:list) -> tuple {
+    split_at_aux(i, l, Nil)
+}
+
+def merge(left : list, right : list) -> list {
+    match  Tu(left, right) {
+        Tu(Nil, r) =>  r
+        Tu(l, Nil) => l
+        Tu(Cons(l, ls), Cons(r, rs)) => {
+            if l <= r then 
+                Cons(l, merge(ls, Cons(r, rs))) 
+            else {
+                Cons(r, merge(Cons(l, ls), rs)) 
+            }
+        }
+    }
+}
+
+def merge_sort(l : list) -> list {
+    match l {
+        Nil => Nil
+        Cons(x, Nil) => Cons(x, Nil)
+        xs => {
+            let len = length(xs) in
+            match split_at(len / 2, xs) {
+                Tu(l, r) => merge (merge_sort(l), merge_sort(r))
+            }
+        }
+    }
+}
+
+def dedupe_aux(l:list, last : option) -> list {
+    let sorted = merge_sort(l) in
+    match sorted {
+        Nil => Nil
+        Cons(x, xs) => {
+            match last {
+                Some(n) => {
+                    if x == n then dedupe_aux(xs, last) else {
+                        Cons(x, dedupe_aux(xs, Some(x)))
+                    }
+                }
+                None => Cons(x, dedupe_aux(xs, Some(x)))
+            }
+            
+        }
+    }
+}

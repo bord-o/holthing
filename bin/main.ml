@@ -8,7 +8,8 @@ let parse_file filename =
   try
     let ast = Parser.main Lexer.token lexbuf in
     close_in ic;
-    Printf.printf "Parse successful!\n%s\n" (Absyn.show_program ast);
+    (* Printf.printf "Parse successful!\n%s\n" (Absyn.show_program ast); *)
+    Printf.printf "Parse successful!\n" ;
     ast
   with
   | Parser.Error ->
