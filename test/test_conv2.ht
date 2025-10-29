@@ -3,8 +3,6 @@ type option = None | Some(int)
 type result = Error(string) | Ok(int)
 type tuple = Tu(list, list)
 
-
-
 def length(l:list) -> int {
     match l {
         Nil => 0
@@ -70,17 +68,16 @@ def merge_sort(l : list) -> list {
 def dedupe_aux(l:list, last : option) -> list {
     let sorted = merge_sort(l) in
     match sorted {
-        Nil => Nil
+        Nil => Nil 
         Cons(x, xs) => {
             match last {
                 Some(n) => {
-                    if x == n then dedupe_aux(xs, last) else {
+                    if { x == n } then dedupe_aux(xs, last) else {
                         Cons(x, dedupe_aux(xs, Some(x)))
                     }
                 }
                 None => Cons(x, dedupe_aux(xs, Some(x)))
             }
-            
         }
     }
 }

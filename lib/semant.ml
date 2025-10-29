@@ -51,6 +51,7 @@ let empty_env = { vals = []; funs = []; types = []; type_params = [] }
 let builtin_types =
   [
     ("int", { name = "int"; type_params = []; constructors = []; alias = None });
+    ("num", { name = "num"; type_params = []; constructors = []; alias = None });
     ( "bool",
       { name = "bool"; type_params = []; constructors = []; alias = None } );
     ( "string",

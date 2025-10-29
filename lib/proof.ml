@@ -19,7 +19,7 @@ let rec string_of_list = function [] -> "" | x :: xs -> x ^ string_of_list xs
 let pattern_hol_def ~(name : string) ~(args : string list) ~(body : string) =
   let term_args = intersperse " " args |> string_of_list in
 
-  Printf.sprintf "`%s %s = %s`;;" name term_args body
+  Printf.sprintf "let %s_def = define `%s %s = %s`;;" name name term_args body
 
 let pattern_hol_call ~(caller : string) ~(args : string list) =
   let term_args = intersperse " " args |> string_of_list in
@@ -122,6 +122,9 @@ let hol_of_def (f_def : fun_info) =
   pattern_hol_def ~name:hol_name ~args:args_hol ~body:hol_body
 
 let hol_of_ty_def (ty_def : type_info) =
+    (*
+        new_type_abbrev("state", `:string -> num`);;
+     *)
   if ty_def.alias |> Option.is_some then failwith "TODO: type abbrev"
   else
     let hol_name = ty_def.name in
@@ -134,11 +137,11 @@ let hol_of_ty_def (ty_def : type_info) =
              Printf.sprintf "%s %s" cons.name arg_hol)
     in
     let hol_def = intersperse " | " hol_defs |> string_of_list in
-    Printf.sprintf "%s = %s" hol_name hol_def
+    Printf.sprintf {|let %s_INDUCT, %s_RECURSION = define_type "%s = %s";;|} hol_name  hol_name hol_name hol_def
 
 let hol_of_env (env : Semant.env) =
   let hol_defs =
     List.map (fun (_, td) -> hol_of_ty_def td) env.types |> List.rev
   in
   let hol_funs = List.map (fun (_, fd) -> hol_of_def fd) env.funs |> List.rev in
-  print_endline @@ show_hol_state (List.append hol_defs hol_funs)
+  (List.append hol_defs hol_funs) |> List.iter (Fun.compose print_newline print_endline )

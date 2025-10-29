@@ -1,0 +1,27 @@
+
+
+type mynat = Z | S(mynat)
+type mytuple = Toop(mynat, mynat)
+
+def mynat_of_int(n : int) -> mynat {
+    if n <= 0 then Z else S(mynat_of_int(n - 1))
+}
+
+def add_mynat(a : mynat, b : mynat) -> mynat {
+    match Toop(a, b) {
+        Toop(n, Z) => n
+        Toop(n, S(m)) =>  S(add_mynat(n, m))
+    }
+}
+
+
+def max_mynat(a : mynat, b : mynat) -> mynat {
+    match Toop(a, b) {
+        Toop(n, Z) => n
+        Toop(Z, m) => m
+        Toop(S(n), S(m)) => {
+            S(max_mynat(n, m))
+        }
+    }
+}
+
